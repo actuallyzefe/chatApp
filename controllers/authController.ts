@@ -1,7 +1,9 @@
 import { User } from '../models/UserModel';
 import { NextFunction, Request, Response } from 'express';
 import { Types } from 'mongoose';
-import jwt from 'jsonwebtoken';
+import jwt, { JwtPayload } from 'jsonwebtoken';
+import { Decoded, DevelopedRequest } from '../interfaces/AuthInterfaces';
+import { IncomingHttpHeaders } from 'http';
 
 const signToken = (id: Types.ObjectId) => {
   return jwt.sign({ id }, process.env.JWT_SECRET!, {
@@ -73,7 +75,37 @@ export const login = async (req: Request, res: Response) => {
 
 // Route Protection
 export const isLoggedIn = async (
-  req: Request,
+  req: DevelopedRequest,
   res: Response,
   next: NextFunction
-) => {};
+) => {
+  let token: string;
+  const headers = req.headers as unknown as IncomingHttpHeaders;
+  //1) Getting token and check if it exists
+  if (headers.authorization && headers.authorization.startsWith('Bearer')) {
+    token = headers.authorization.split(' ')[1];
+  } else if (req.cookies.jwt) {
+    token = req.cookies.jwt;
+  }
+
+  if (!token!) {
+    res.status(401).json({
+      status: 'Fail',
+      msg: 'You are not logged in',
+    });
+    next();
+  }
+  const decoded: Decoded = jwt.verify(
+    token!,
+    process.env.JWT_SECRET!
+  ) as Decoded;
+  const currentUser = await User.findById(decoded.id);
+  if (!currentUser) {
+    res.status(401).json({
+      status: 'Fail',
+      msg: 'The user is no longer exists',
+    });
+  }
+
+  next();
+};
