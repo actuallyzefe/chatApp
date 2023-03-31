@@ -1,15 +1,41 @@
 import { User } from '../models/UserModel';
 import { NextFunction, Request, Response } from 'express';
 import { Types } from 'mongoose';
-import jwt, { JwtPayload } from 'jsonwebtoken';
-import { Decoded, DevelopedRequest } from '../interfaces/AuthInterfaces';
-import { IncomingHttpHeaders } from 'http';
+import jwt from 'jsonwebtoken';
+// // import { IncomingHttpHeaders } from 'http';
+// // import { DevelopedRequest, Decoded } from '../interfaces/AuthInterfaces';
 
 const signToken = (id: Types.ObjectId) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET!, {
+  return jwt.sign({ id }, process.env.JWT_KEY!, {
     expiresIn: process.env.JWT_EXPIRES_IN,
   });
 };
+const cookieExpire = process.env.JWT_COOKE_EXPIRES_IN;
+
+const createSendToken = (user: any, statusCode: number, res: Response) => {
+  const token = signToken(user._id);
+  if (cookieExpire) {
+    //@ts-ignore
+    const cookieOptions: Cookie = {
+      //@ts-ignore
+      expires: new Date(Date.now() + cookieExpire * 24 * 60 * 60 * 1000),
+      httpOnly: true,
+    };
+    if (process.env.NODE_ENV === 'production') cookieOptions.secure = true;
+
+    res.cookie('jsonwebtoken', token, cookieOptions);
+  }
+  user.password = undefined;
+
+  res.status(statusCode).json({
+    status: 'success',
+    token,
+    data: {
+      user,
+    },
+  });
+};
+// Remove password from output
 
 // SignUp
 export const signup = async (req: Request, res: Response) => {
@@ -20,13 +46,23 @@ export const signup = async (req: Request, res: Response) => {
     if (checkUser) return res.status(400).send('Email in use');
 
     const newUser = await User.create({ name, email, password });
-    const token = signToken(newUser._id);
-    newUser.password = undefined!;
-    res.status(201).json({
-      status: 'Success',
-      token,
-      data: newUser,
-    });
+    createSendToken(newUser, 201, res);
+    // const token = jwt.sign(
+    //   {
+    //     _id: newUser._id,
+    //     email: newUser.email,
+    //   },
+    //   process.env.JWT_KEY!
+    // );
+    // newUser.password = undefined!;
+    // res.cookie('jsonwebtoken', token);
+    // res.status(201).json({
+    //   status: 'Fail',
+    //   data: {
+    //     user: newUser,
+    //     token,
+    //   },
+    // });
   } catch (e: any) {
     res.status(400).json({
       status: 'Fail',
@@ -56,14 +92,24 @@ export const login = async (req: Request, res: Response) => {
       });
     }
     if (user) {
+      const token = jwt.sign(
+        {
+          _id: user.id,
+        },
+        process.env.JWT_KEY!
+      );
       user.password = undefined!;
-      const token = signToken(user._id);
+      res.cookie('jsonwebtoken', token);
+
       res.status(200).json({
         status: 'Success',
-        token,
-        data: user,
+        data: {
+          user: user,
+          token,
+        },
       });
     }
+    // createSendToken(user, 200, res);
   } catch (e: any) {
     res.status(400).json({
       status: 'Fail',
@@ -73,39 +119,11 @@ export const login = async (req: Request, res: Response) => {
   }
 };
 
-// Route Protection
-export const isLoggedIn = async (
-  req: DevelopedRequest,
-  res: Response,
-  next: NextFunction
-) => {
-  let token: string;
-  const headers = req.headers as unknown as IncomingHttpHeaders;
-  //1) Getting token and check if it exists
-  if (headers.authorization && headers.authorization.startsWith('Bearer')) {
-    token = headers.authorization.split(' ')[1];
-  } else if (req.cookies.jwt) {
-    token = req.cookies.jwt;
+export const logout = (req: Request, res: Response) => {
+  try {
+    res.clearCookie('jsonwebtoken');
+    res.sendStatus(200);
+  } catch (error) {
+    return res.status(400).send(error);
   }
-
-  if (!token!) {
-    res.status(401).json({
-      status: 'Fail',
-      msg: 'You are not logged in',
-    });
-    next();
-  }
-  const decoded: Decoded = jwt.verify(
-    token!,
-    process.env.JWT_SECRET!
-  ) as Decoded;
-  const currentUser = await User.findById(decoded.id);
-  if (!currentUser) {
-    res.status(401).json({
-      status: 'Fail',
-      msg: 'The user is no longer exists',
-    });
-  }
-
-  next();
 };

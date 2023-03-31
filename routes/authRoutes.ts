@@ -1,14 +1,14 @@
 import express from 'express';
-import { signup, login, isLoggedIn } from '../controllers/authController';
+import { signup, login, logout } from '../controllers/authController';
+import { checkUser } from '../middlewares/checkUser';
 
 const router = express.Router();
 
-router.post('/signup', signup);
+router.post('/sigup', signup);
 router.post('/login', login);
 
-router.use(isLoggedIn);
-router.get('/logged', (req, res) => {
-  res.send('WELKAM');
-});
+//@ts-ignore
+
+router.get('/logout', checkUser, logout);
 
 export { router };
