@@ -4,7 +4,7 @@ import { checkUser } from '../middlewares/checkUser';
 
 const router = express.Router();
 
-router.post('/sigup', signup);
+router.post('/signup', signup);
 router.post('/login', login);
 
 //@ts-ignore

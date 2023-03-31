@@ -46,23 +46,22 @@ export const signup = async (req: Request, res: Response) => {
     if (checkUser) return res.status(400).send('Email in use');
 
     const newUser = await User.create({ name, email, password });
-    createSendToken(newUser, 201, res);
-    // const token = jwt.sign(
-    //   {
-    //     _id: newUser._id,
-    //     email: newUser.email,
-    //   },
-    //   process.env.JWT_KEY!
-    // );
-    // newUser.password = undefined!;
-    // res.cookie('jsonwebtoken', token);
-    // res.status(201).json({
-    //   status: 'Fail',
-    //   data: {
-    //     user: newUser,
-    //     token,
-    //   },
-    // });
+
+    const token = jwt.sign(
+      {
+        _id: newUser._id,
+      },
+      process.env.JWT_KEY!
+    );
+    newUser.password = undefined!;
+    res.cookie('jsonwebtoken', token);
+    res.status(201).json({
+      status: 'Success',
+      data: {
+        user: newUser,
+        token,
+      },
+    });
   } catch (e: any) {
     res.status(400).json({
       status: 'Fail',
