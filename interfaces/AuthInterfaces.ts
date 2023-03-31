@@ -5,7 +5,7 @@ export interface Decoded {
   id: string | JwtPayload;
 }
 export interface DevelopedRequest extends Request {
-  user?: any;
+  user?: typeof User;
   cookies: Record<string, any>;
   headers: Headers;
 }
