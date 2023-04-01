@@ -95,3 +95,5 @@ export const logout = (req: Request, res: Response) => {
     return res.status(400).send(error);
   }
 };
+
+// test commit
