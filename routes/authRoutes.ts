@@ -11,4 +11,4 @@ router.post('/login', login);
 
 router.get('/logout', checkUser, logout);
 
-export { router };
+export { router as auth };
