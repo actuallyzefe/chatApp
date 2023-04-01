@@ -7,8 +7,7 @@ const router = express.Router();
 router.post('/signup', signup);
 router.post('/login', login);
 
-//@ts-ignore
-
-router.get('/logout', checkUser, logout);
+router.use(checkUser);
+router.get('/logout', logout);
 
 export { router as auth };
