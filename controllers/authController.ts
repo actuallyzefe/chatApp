@@ -1,32 +1,31 @@
 import { User } from '../models/UserModel';
-import { NextFunction, Request, Response } from 'express';
+import { CookieOptions, NextFunction, Request, Response } from 'express';
 import { Types } from 'mongoose';
 import jwt from 'jsonwebtoken';
-// // import { IncomingHttpHeaders } from 'http';
-// // import { DevelopedRequest, Decoded } from '../interfaces/AuthInterfaces';
+import { IUser } from '../interfaces/SchemaInterfaces';
+import { Cookie } from 'express-session';
 
 const signToken = (id: Types.ObjectId) => {
   return jwt.sign({ id }, process.env.JWT_KEY!, {
     expiresIn: process.env.JWT_EXPIRES_IN,
   });
 };
-const cookieExpire = process.env.JWT_COOKE_EXPIRES_IN;
 
-const createSendToken = (user: any, statusCode: number, res: Response) => {
+const createSendToken = (user: IUser, statusCode: number, res: Response) => {
   const token = signToken(user._id);
-  if (cookieExpire) {
-    //@ts-ignore
-    const cookieOptions: Cookie = {
-      //@ts-ignore
-      expires: new Date(Date.now() + cookieExpire * 24 * 60 * 60 * 1000),
-      httpOnly: true,
-    };
-    if (process.env.NODE_ENV === 'production') cookieOptions.secure = true;
 
-    res.cookie('jsonwebtoken', token, cookieOptions);
-  }
-  user.password = undefined;
+  const cookieOptions: Cookie = {
+    expires: new Date(
+      Date.now() +
+        parseInt(process.env.JWT_COOKIE_EXPIRES_IN!) * 24 * 60 * 60 * 1000
+    ),
+    httpOnly: true,
+    originalMaxAge: null,
+  };
+  if (process.env.NODE_ENV === 'production') cookieOptions.secure = true;
 
+  res.cookie('jsonwebtoken', token, cookieOptions as CookieOptions);
+  user.password = undefined!;
   res.status(statusCode).json({
     status: 'success',
     token,
@@ -35,9 +34,9 @@ const createSendToken = (user: any, statusCode: number, res: Response) => {
     },
   });
 };
-// Remove password from output
 
 // SignUp
+
 export const signup = async (req: Request, res: Response) => {
   const { name, email, password } = req.body;
   try {
@@ -47,21 +46,7 @@ export const signup = async (req: Request, res: Response) => {
 
     const newUser = await User.create({ name, email, password });
 
-    const token = jwt.sign(
-      {
-        _id: newUser._id,
-      },
-      process.env.JWT_KEY!
-    );
-    newUser.password = undefined!;
-    res.cookie('jsonwebtoken', token);
-    res.status(201).json({
-      status: 'Success',
-      data: {
-        user: newUser,
-        token,
-      },
-    });
+    createSendToken(newUser, 201, res);
   } catch (e: any) {
     res.status(400).json({
       status: 'Fail',
@@ -91,24 +76,8 @@ export const login = async (req: Request, res: Response) => {
       });
     }
     if (user) {
-      const token = jwt.sign(
-        {
-          _id: user.id,
-        },
-        process.env.JWT_KEY!
-      );
-      user.password = undefined!;
-      res.cookie('jsonwebtoken', token);
-
-      res.status(200).json({
-        status: 'Success',
-        data: {
-          user: user,
-          token,
-        },
-      });
+      createSendToken(user, 200, res);
     }
-    // createSendToken(user, 200, res);
   } catch (e: any) {
     res.status(400).json({
       status: 'Fail',

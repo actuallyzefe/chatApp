@@ -21,7 +21,10 @@ export const checkUser = (req: Request, res: Response, next: NextFunction) => {
     ) as UserPayload;
     req.user = payload;
   } catch (error) {
-    return res.status(400).send(error);
+    return res.status(400).json({
+      status: 'Fail',
+      msg: 'You must login',
+    });
   }
 
   next();
