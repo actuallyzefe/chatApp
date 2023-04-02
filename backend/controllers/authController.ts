@@ -4,6 +4,7 @@ import { Types } from 'mongoose';
 import jwt from 'jsonwebtoken';
 import { IUser } from '../interfaces/SchemaInterfaces';
 import { Cookie } from 'express-session';
+import { nextTick } from 'process';
 
 const signToken = (id: Types.ObjectId) => {
   return jwt.sign({ id }, process.env.JWT_KEY!, {
@@ -11,7 +12,12 @@ const signToken = (id: Types.ObjectId) => {
   });
 };
 
-const createSendToken = (user: IUser, statusCode: number, res: Response) => {
+const createSendToken = (
+  user: IUser,
+  statusCode: number,
+  res: Response,
+  next: NextFunction
+) => {
   const token = signToken(user._id);
 
   const cookieOptions: Cookie = {
@@ -33,11 +39,16 @@ const createSendToken = (user: IUser, statusCode: number, res: Response) => {
       user,
     },
   });
+  next();
 };
 
 // SignUp
 
-export const signup = async (req: Request, res: Response) => {
+export const signup = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   const { name, email, password } = req.body;
   try {
     // Checking the email if that is in use
@@ -46,19 +57,26 @@ export const signup = async (req: Request, res: Response) => {
 
     const newUser = await User.create({ name, email, password });
 
-    createSendToken(newUser, 201, res);
+    createSendToken(newUser, 201, res, next);
+    next();
   } catch (e: any) {
     res.status(400).json({
       status: 'Fail',
       msg: e.message,
     });
     console.log(e);
+    next();
   }
+  next();
 };
 
 // Login
 
-export const login = async (req: Request, res: Response) => {
+export const login = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   const { email, password } = req.body;
 
   try {
@@ -76,24 +94,30 @@ export const login = async (req: Request, res: Response) => {
       });
     }
     if (user) {
-      createSendToken(user, 200, res);
+      createSendToken(user, 200, res, next);
+      next();
     }
+    next();
   } catch (e: any) {
     res.status(400).json({
       status: 'Fail',
       msg: e.message,
     });
     console.log(e);
+    next();
   }
+  next();
 };
 
-export const logout = (req: Request, res: Response) => {
+export const logout = (req: Request, res: Response, next: NextFunction) => {
   try {
     res.clearCookie('jsonwebtoken');
     res.sendStatus(200);
+    next();
   } catch (error) {
     return res.status(400).send(error);
   }
+  next();
 };
 
 // test commit
