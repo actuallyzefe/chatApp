@@ -43,7 +43,6 @@ const createSendToken = (
 };
 
 // SignUp
-
 export const signup = async (
   req: Request,
   res: Response,
@@ -72,7 +71,7 @@ export const signup = async (
 
 // Login
 
-export const login = async (
+export const signin = async (
   req: Request,
   res: Response,
   next: NextFunction
@@ -109,7 +108,7 @@ export const login = async (
   next();
 };
 
-export const logout = (req: Request, res: Response, next: NextFunction) => {
+export const signOut = (req: Request, res: Response, next: NextFunction) => {
   try {
     res.clearCookie('jsonwebtoken');
     res.sendStatus(200);
