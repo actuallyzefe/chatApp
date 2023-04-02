@@ -1,13 +1,13 @@
 import express from 'express';
-import { signup, login, logout } from '../controllers/authController';
+import { signup, signin, signOut } from '../controllers/authController';
 import { checkUser } from '../middlewares/checkUser';
 
 const router = express.Router();
 
 router.post('/signup', signup);
-router.post('/login', login);
+router.post('/login', signin);
 
 router.use(checkUser);
-router.get('/logout', logout);
+router.get('/logout', signOut);
 
 export { router as auth };
