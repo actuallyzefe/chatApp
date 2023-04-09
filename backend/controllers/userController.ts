@@ -15,7 +15,7 @@ export const updateMe = async (
   next: NextFunction
 ) => {
   try {
-    const email = req.body.email;
+    const { email, password } = req.body;
     const user = await User.findById({ _id: req.user?._id });
     if (!user) {
       return res.status(404).json({
@@ -23,14 +23,24 @@ export const updateMe = async (
         msg: 'User not found',
       });
     }
+
     const filteredBody = filterObj(req.body, 'name', 'email');
     const invalidEmail = await User.findOne({ email });
+
     if (invalidEmail) {
       return res.status(400).json({
         status: 'Fail',
         msg: 'Email in use',
       });
     }
+
+    if (password) {
+      return res.status(400).json({
+        status: 'Fail',
+        msg: 'This route is not for password update',
+      });
+    }
+
     const updatedUser = await User.findByIdAndUpdate(
       { _id: req.user?._id },
       filteredBody,
