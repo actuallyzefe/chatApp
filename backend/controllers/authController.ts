@@ -1,5 +1,5 @@
 import { User } from '../models/UserModel';
-import { CookieOptions, NextFunction, Request, Response } from 'express';
+import { Request, Response } from 'express';
 import { Types } from 'mongoose';
 import jwt from 'jsonwebtoken';
 
@@ -61,15 +61,6 @@ export const signOut = (req: Request, res: Response) => {
   } catch (error) {
     return res.status(400).send(error);
   }
-};
-
-export const updateMe = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  const user = await User.findById({ _id: req.user?._id });
-  res.send(user);
 };
 
 // test commit
