@@ -1,5 +1,5 @@
-import React from "react";
-import { ArrowDown2, AddCircle } from "iconsax-react";
+import React from 'react'
+import { ArrowDown2, AddCircle} from 'iconsax-react';
 const MessagesComponent = () => {
   return (
       <div className="messages-component bg-gray-100 w-full h-full shadow-messages border-r border-solid border-gray-200 ">
@@ -9,22 +9,18 @@ const MessagesComponent = () => {
           <div className='w-8 h-6 bg-gray-300 rounded-3xl flex justify-center items-center ml-5'>20</div>
           <AddCircle className='ml-auto' size="32" color="black"/>
         </div>
-        <AddCircle className="ml-auto" size="32" color="black" />
+        <div className="messages-global-list">
+          <div className="messages-search-part">
+            <form className='flex justify-center pt-4'>
+              <input type="text" placeholder='Search messages' className='w-4/5 rounded-xl h-12 '/>
+            </form>
+          </div>
+          <div className='messages-list'>
+              
+          </div>
+          </div>
       </div>
-      <div className="messages-global-list">
-        <div className="messages-search-part">
-          <form className="flex justify-center pt-4">
-            <input
-              type="text"
-              placeholder="Search messages"
-              className="w-4/5 rounded-xl h-12 "
-            />
-          </form>
-        </div>
-        <div className="messages-list"></div>
-      </div>
-    </div>
-  );
-};
+  )
+}
 
 export default MessagesComponent;
