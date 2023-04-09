@@ -6,7 +6,7 @@ const MessagesComponent = () => {
         <div className="messages-header border-b border-solid border-gray-200 flex py-6 px-4 items-center">
           <p className='font-semibold text-xl ml-3' >Messages</p>
           <ArrowDown2 className='ml-2' size="32" color="black"/> 
-          <div className='w-8 h-6 bg-gray-300 rounded-3xl flex justify-center items-center ml-5'>12</div>
+          <div className='w-8 h-6 bg-gray-300 rounded-3xl flex justify-center items-center ml-5'>20</div>
           <AddCircle className='ml-auto' size="32" color="black"/>
         </div>
         <div className="messages-global-list">
