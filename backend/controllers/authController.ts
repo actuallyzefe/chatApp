@@ -2,89 +2,33 @@ import { User } from '../models/UserModel';
 import { CookieOptions, NextFunction, Request, Response } from 'express';
 import { Types } from 'mongoose';
 import jwt from 'jsonwebtoken';
-import { IUser } from '../interfaces/SchemaInterfaces';
-import { Cookie } from 'express-session';
-import { nextTick } from 'process';
 
-const signToken = (id: Types.ObjectId) => {
-  return jwt.sign({ id }, process.env.JWT_KEY!, {
-    expiresIn: process.env.JWT_EXPIRES_IN,
-  });
-};
-
-const createSendToken = (
-  user: IUser,
-  statusCode: number,
-  res: Response,
-  next: NextFunction
-) => {
-  const token = signToken(user._id);
-
-  const cookieOptions: Cookie = {
-    expires: new Date(
-      Date.now() +
-        parseInt(process.env.JWT_COOKIE_EXPIRES_IN!) * 24 * 60 * 60 * 1000
-    ),
-    httpOnly: true,
-    originalMaxAge: null,
-  };
-  if (process.env.NODE_ENV === 'production') cookieOptions.secure = true;
-
-  res.cookie('jsonwebtoken', token, cookieOptions as CookieOptions);
-  user.password = undefined!;
-  res.status(statusCode).json({
-    status: 'success',
-    token,
-    data: {
-      user,
-    },
-  });
-  next();
-};
-
-// SignUp
-export const signup = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  const { name, email, password } = req.body;
+export const signup = async (req: Request, res: Response) => {
   try {
-    // Checking the email if that is in use
-    const checkUser = await User.findOne({ email });
-    if (checkUser) return res.status(400).send('Email in use');
+    const { name, email, password } = req.body;
+    const isAvailable = await User.findOne({ email });
+    if (isAvailable) return res.status(400).send('Email in use');
 
-    const newUser = await User.create({ name, email, password });
+    const user = await User.create({ name, email, password });
 
-    createSendToken(newUser, 201, res, next);
-    next();
-  } catch (e: any) {
-    res.status(400).json({
-      status: 'Fail',
-      msg: e.message,
-    });
-    console.log(e);
-    next();
+    const userJwt = jwt.sign(
+      {
+        _id: user._id,
+        email: user.email,
+      },
+      process.env.JWT_KEY!
+    );
+
+    user.password = undefined!;
+    res.cookie('jsonwebtoken', userJwt);
+    res.status(201).send(user);
+  } catch (error) {
+    return res.status(400).send(error);
   }
-  next();
 };
-
-// Login
-
-export const signin = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  const { email, password } = req.body;
-
+export const signin = async (req: Request, res: Response) => {
   try {
-    if (!email || !password) {
-      res.status(400).json({
-        status: 'Fail',
-        msg: 'Please provide nickname password',
-      });
-    }
+    const { email, password } = req.body;
     const user = await User.findOne({ email }).select('+password');
     if (!user || !(await user.comparePassword(password, user.password))) {
       res.status(400).json({
@@ -93,30 +37,39 @@ export const signin = async (
       });
     }
     if (user) {
-      createSendToken(user, 200, res, next);
-      next();
-    }
-    next();
-  } catch (e: any) {
-    res.status(400).json({
-      status: 'Fail',
-      msg: e.message,
-    });
-    console.log(e);
-    next();
-  }
-  next();
-};
+      const userJwt = jwt.sign(
+        {
+          _id: user.id,
+          email: user.email,
+        },
+        process.env.JWT_KEY!
+      );
 
-export const signOut = (req: Request, res: Response, next: NextFunction) => {
-  try {
-    res.clearCookie('jsonwebtoken');
-    res.sendStatus(200);
-    next();
+      user.password = undefined!;
+      res.cookie('jsonwebtoken', userJwt);
+      res.status(200).send(user);
+    }
   } catch (error) {
     return res.status(400).send(error);
   }
-  next();
+};
+
+export const signOut = (req: Request, res: Response) => {
+  try {
+    res.clearCookie('jsonwebtoken');
+    res.sendStatus(200);
+  } catch (error) {
+    return res.status(400).send(error);
+  }
+};
+
+export const updateMe = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const user = await User.findById({ _id: req.user?._id });
+  res.send(user);
 };
 
 // test commit
